@@ -1,38 +1,34 @@
 #!/usr/bin/env python3
-"""结构自检：确保 HTML/CSS/JS 三者的关键钩子对得上，防止改一处漏一处。"""
-import re, pathlib
+"""结构自检：3D 版关键接线是否对齐，防止改一处漏一处。"""
+import pathlib
 
 root = pathlib.Path(__file__).parent
 html = (root / "index.html").read_text()
 css = (root / "style.css").read_text()
 js = (root / "main.js").read_text()
 
-# 1) wind 滤镜存在且被 CSS 引用
-for fid in ("wind",):
-    assert f'id="{fid}"' in html, f"缺滤镜 #{fid}"
-    assert f"url(#{fid})" in css, f"CSS 未引用 #{fid}"
+# 1) importmap 三个入口齐全且版本一致
+assert '"three":' in html and '"three/addons/":' in html and '@dgreenheck/ez-tree' in html
+assert html.count("three@0.180.0") >= 2, "three 版本未对齐"
+assert "deps=three@0.180.0" in html, "ez-tree 未 pin three"
 
-# 2) canopy-mask 存在且被 CSS 引用
-assert 'id="canopy-mask"' in html, "缺 #canopy-mask"
-assert "url(#canopy-mask)" in css, "CSS 未引用 #canopy-mask"
+# 2) 阴影链路：renderer 开 shadowMap + sun.castShadow + 树投影 + 地面接收
+assert "shadowMap.enabled = true" in js
+assert "castShadow = true" in js and "receiveShadow = true" in js
+assert "shadow.camera" in js, "平行光阴影视锥未配置（默认视锥装不下树）"
 
-# 2) 风力三档：CSS 有 data-wind 1/2/3，JS 循环同三档
-for lvl in ("1", "2", "3"):
-    assert f'data-wind="{lvl}"' in css, f"CSS 缺风力档 {lvl}"
-assert 'WIND_LEVELS' in js and "'1'" in js and "'3'" in js, "JS 风力档位不全"
+# 3) 风动：tree.update(t) 每帧驱动 + uWindStrength 可调
+assert "tree.update(t)" in js
+assert "uWindStrength" in js, "风力档位未接 shader"
 
-# 3) 树与投影共用同一树形，根部对齐 (200,524)
-assert 'id="tree-shape"' in html
-assert 'href="#tree-shape"' in html and html.count('href="#tree-shape"') == 2, "树/投影应各引用一次树形"
-assert "200px 524px" in css, "摇曳原点未对齐树根"
+# 4) 昼夜：dayness 方向修正存在（night 时 a 增大应趋向夜）
+assert "dayness" in js and "1 - a" in js
 
-# 4) sway 关键帧存在且引用 --sway
-assert "@keyframes sway" in css and "var(--sway)" in css
+# 5) #app 必须有显式高度，否则 canvas 0 高（历史 bug）
+assert "#app" in css and "inset: 0" in css
 
-# 5) 昼夜切换：checkbox + :has + body.dark 三件套齐全
-assert 'id="daynight"' in html and ":has(#daynight" in css and "body.dark" in css
-
-# 6) reduced-motion 兜底
-assert "prefers-reduced-motion" in css
+# 6) 风力三档 + 按键
+assert js.count("一级") + js.count("二级") + js.count("三级") >= 3
+assert "'w'" in js and "'s'" in js
 
 print("OK: 结构自检全部通过")

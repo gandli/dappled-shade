@@ -4,116 +4,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>树影婆娑 · Dappled Shade</title>
+  <title>树影婆娑 · 3D</title>
   <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://esm.sh/three@0.180.0",
+        "three/addons/": "https://esm.sh/three@0.180.0/examples/jsm/",
+        "@dgreenheck/ez-tree": "https://esm.sh/@dgreenheck/ez-tree@1.1.0?deps=three@0.180.0"
+      }
+    }
+  </script>
 </head>
 
-<body data-wind="2">
-  <svg style="position:absolute;width:0;height:0" aria-hidden="true">
-    <defs>
-      <filter id="wind" x="-30%" y="-30%" width="160%" height="160%">
-        <feTurbulence type="fractalNoise" numOctaves="2" seed="1">
-          <animate attributeName="baseFrequency" dur="16s" keyTimes="0;0.33;0.66;1"
-            values="0.005 0.003;0.01 0.009;0.008 0.004;0.005 0.003" repeatCount="indefinite" />
-        </feTurbulence>
-        <feDisplacementMap in="SourceGraphic">
-          <animate attributeName="scale" dur="20s" keyTimes="0;0.25;0.5;0.75;1" values="45;55;75;55;45"
-            repeatCount="indefinite" />
-        </feDisplacementMap>
-        <feGaussianBlur stdDeviation="0.8" />
-      </filter>
-
-      <!-- 树冠遮罩：leaves-mask.png 的 alpha（白=叶/黑=透光），树冠天然斑驳透光 -->
-      <mask id="canopy-mask" maskContentUnits="objectBoundingBox">
-        <rect width="1" height="1" fill="white" />
-        <image href="./leaves-mask.png" x="0" y="0" width="1" height="1"
-          preserveAspectRatio="xMidYMid slice" />
-      </mask>
-
-      <!-- 可复用的树形（树干 + 树枝），供本体与投影共用 -->
-      <g id="tree-shape">
-        <path d="M188,524 C194,444 197,362 198,320 C199,308 205,308 206,320 C207,362 210,444 216,524 Z" />
-        <path d="M201,356 L158,308 L199,342 Z" />
-        <path d="M204,360 L248,312 L206,342 Z" />
-      </g>
-
-      <!-- 树冠叶簇轮廓 -->
-      <g id="canopy-shape">
-        <ellipse cx="200" cy="200" rx="92" ry="70" />
-        <ellipse cx="140" cy="226" rx="58" ry="48" />
-        <ellipse cx="262" cy="214" rx="62" ry="50" />
-        <ellipse cx="206" cy="148" rx="68" ry="52" />
-        <ellipse cx="150" cy="168" rx="48" ry="40" />
-        <ellipse cx="256" cy="168" rx="48" ry="40" />
-        <ellipse cx="200" cy="116" rx="52" ry="40" />
-        <ellipse cx="120" cy="206" rx="40" ry="34" />
-        <ellipse cx="282" cy="200" rx="40" ry="34" />
-        <ellipse cx="232" cy="232" rx="44" ry="36" />
-        <ellipse cx="168" cy="240" rx="44" ry="36" />
-        <ellipse cx="186" cy="278" rx="46" ry="30" />
-        <ellipse cx="222" cy="274" rx="42" ry="28" />
-      </g>
-    </defs>
-  </svg>
-
-  <div id="scene">
-    <div id="glow"></div>
-    <div id="ground-wash"></div>
-    <div id="sun-hotspot"></div>
-
-    <div class="perspective">
-      <div id="ambient"></div>
-    </div>
-
-    <!-- 地面投影：复用树形，压扁 + 倾斜投向左下 -->
-    <svg id="shadow-svg" viewBox="0 0 400 540" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-      <g id="cast-base">
-        <g id="cast">
-          <use href="#tree-shape" />
-          <g id="cast-canopy">
-            <use href="#canopy-shape" />
-          </g>
-        </g>
-        <!-- 树根接触影：把树钉在地上 -->
-        <ellipse id="contact" cx="200" cy="523" rx="30" ry="7" />
-      </g>
-    </svg>
-
-    <!-- 一棵树 -->
-    <svg id="tree-svg" viewBox="0 0 400 540" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-      <g id="tree-base">
-        <g id="tree">
-          <use href="#tree-shape" />
-        </g>
-        <g id="tree-canopy">
-          <use href="#canopy-shape" />
-        </g>
-      </g>
-    </svg>
-
-    <div id="ground">
-      <div id="dappled"></div>
-    </div>
-
-    <div id="progressive-blur">
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
-  </div>
+<body>
+  <div id="app"></div>
 
   <main>
     <h1>树影婆娑</h1>
-    <p>纯 CSS / SVG 实现 · 灵感来自 <a href="https://github.com/jackyzha0/sunlit">sunlit</a></p>
-    <pre>[按 <code>S</code> 切换昼夜]   [按 <code>W</code> 切换风力]</pre>
-    <button id="wind-toggle" aria-label="切换风力">风力 · 二级</button>
+    <p>ez-tree 程序化树 · Three.js 风动 · 真实光影</p>
+    <pre>[拖动旋转]  [按 S 昼夜]  [按 W 风力]</pre>
+    <button id="wind-pill" aria-label="切换风力">风力 · 二级</button>
   </main>
 
-  <input type="checkbox" id="daynight" aria-label="切换昼夜">
-  <label for="daynight" class="toggle-area" tabindex="0"></label>
-
-  <script src="./main.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 
 </html>

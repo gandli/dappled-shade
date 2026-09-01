@@ -1,27 +1,148 @@
-// 昼夜 + 风力切换（checkbox 走 CSS :has，JS 只补 class 与按钮）
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Tree } from '@dgreenheck/ez-tree';
 
-const body = document.body;
-const daynight = document.getElementById('daynight');
-const windToggle = document.getElementById('wind-toggle');
+const app = document.getElementById('app');
 
-// 昼夜: 点击开关区触发 checkbox, CSS :has 处理场景; 这里同步 body.dark 给文本变量
-daynight.addEventListener('change', () => body.classList.toggle('dark', daynight.checked));
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(app.clientWidth, app.clientHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+app.appendChild(renderer.domElement);
 
-// 风力三档循环
-const WIND_LEVELS = ['1', '2', '3'];
-windToggle.addEventListener('click', () => {
-  const cur = body.dataset.wind || '2';
-  const next = WIND_LEVELS[(WIND_LEVELS.indexOf(cur) + 1) % WIND_LEVELS.length];
-  body.dataset.wind = next;
-  windToggle.textContent = `风力 · ${next === '1' ? '一级' : next === '2' ? '二级' : '三级'}`;
-});
+const scene = new THREE.Scene();
+const SKY_DAY = new THREE.Color(0x8fb6e8);
+const SKY_NIGHT = new THREE.Color(0x0a1020);
+scene.background = SKY_DAY.clone();
+scene.fog = new THREE.FogExp2(SKY_DAY.clone(), 0.0009);
 
-// S 键切换昼夜, W 键切换风力
+const camera = new THREE.PerspectiveCamera(55, app.clientWidth / app.clientHeight, 0.1, 2000);
+camera.position.set(70, 34, 100);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 26, 0);
+controls.minDistance = 40;
+controls.maxDistance = 260;
+controls.maxPolarAngle = Math.PI / 2 + 0.05;
+
+// 光：太阳 + 环境，低强度冷光作暗部
+const sun = new THREE.DirectionalLight(0xfff2d8, 2.4);
+sun.position.set(80, 140, 60);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 400;
+const s = 120;
+sun.shadow.camera.left = -s;
+sun.shadow.camera.right = s;
+sun.shadow.camera.top = s;
+sun.shadow.camera.bottom = -s;
+sun.shadow.bias = -0.0008;
+scene.add(sun);
+
+const ambient = new THREE.HemisphereLight(0xdfeeff, 0x6a5a44, 1.1);
+scene.add(ambient);
+
+// 地面：接收树影的平面
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(400, 64),
+  new THREE.MeshStandardMaterial({ color: 0x6f8a4f, roughness: 1.0, metalness: 0.0 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// 树：程序化生成，自带叶风 shader
+const tree = new Tree();
+tree.loadPreset('Oak Medium');
+tree.leavesMesh.material.color.setHex(0x9cc47a); // 提亮叶色
+tree.castShadow = true;
+tree.receiveShadow = true;
+tree.position.y = 0;
+scene.add(tree);
+
+const WIND_LEVELS = [
+  { name: '一级', strength: 0.18 },
+  { name: '二级', strength: 0.5 },
+  { name: '三级', strength: 1.1 },
+];
+let windIdx = 1;
+
+function applyWind() {
+  const v = WIND_LEVELS[windIdx].strength;
+  const mat = tree.leavesMesh?.material;
+  if (mat?.userData?.shader) {
+    mat.userData.shader.uniforms.uWindStrength.value.set(v, 0, v);
+  }
+}
+
+// 昼夜：太阳位置/色温/强度全插值。夜=低角度冷蓝月光 → 长影婆娑
+const SUN_DAY = { pos: new THREE.Vector3(80, 140, 60), col: new THREE.Color(0xfff2d8), i: 2.4 };
+const SUN_NIGHT = { pos: new THREE.Vector3(-90, 45, -40), col: new THREE.Color(0xbfd0ff), i: 0.9 };
+let dark = false;
+const SKY = { cur: SKY_DAY.clone(), from: SKY_DAY.clone(), to: SKY_DAY.clone(), t: 1 };
+function toggleDayNight() {
+  dark = !dark;
+  document.body.classList.toggle('dark', dark);
+  SKY.from.copy(SKY.cur);
+  SKY.to.copy(dark ? SKY_NIGHT : SKY_DAY);
+  SKY.t = 0;
+}
+const _c = new THREE.Color();
+const GROUND_DAY = new THREE.Color(0x6f8a4f);
+const GROUND_NIGHT = new THREE.Color(0x2a3a2a);
+function lerpSky(a) {
+  // a: 过渡进度 0→1。dayness: 1=白天 0=夜晚
+  const dayness = dark ? 1 - a : a;
+  SKY.cur.copy(SKY.from).lerp(SKY.to, a);
+  scene.background = SKY.cur;
+  scene.fog.color = SKY.cur;
+  sun.position.lerpVectors(SUN_NIGHT.pos, SUN_DAY.pos, dayness);
+  sun.color.copy(_c.copy(SUN_NIGHT.col).lerp(SUN_DAY.col, dayness));
+  sun.intensity = THREE.MathUtils.lerp(SUN_NIGHT.i, SUN_DAY.i, dayness);
+  ambient.intensity = THREE.MathUtils.lerp(0.55, 1.1, dayness);
+  ground.material.color.copy(_c.copy(GROUND_NIGHT).lerp(GROUND_DAY, dayness));
+}
+
+const windPill = document.getElementById('wind-pill');
+function paintWind() {
+  windPill.textContent = `风力 · ${WIND_LEVELS[windIdx].name}`;
+}
 window.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 's') {
-    daynight.checked = !daynight.checked;
-    daynight.dispatchEvent(new Event('change'));
-  } else if (e.key.toLowerCase() === 'w') {
-    windToggle.click();
+  const k = e.key.toLowerCase();
+  if (k === 's') {
+    toggleDayNight();
+  } else if (k === 'w') {
+    windIdx = (windIdx + 1) % WIND_LEVELS.length;
+    applyWind();
+    paintWind();
   }
 });
+
+window.addEventListener('resize', () => {
+  camera.aspect = app.clientWidth / app.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(app.clientWidth, app.clientHeight);
+});
+
+paintWind();
+applyWind();
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.elapsedTime;
+  tree.update(t);
+  if (SKY.t < 1) {
+    SKY.t = Math.min(1, SKY.t + dt / 1.2); // 1.2s 过渡，时间驱动
+    lerpSky(SKY.t);
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
