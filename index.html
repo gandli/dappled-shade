@@ -24,8 +24,20 @@
     <h1>树影婆娑</h1>
     <p>ez-tree 程序化树 · Three.js 风动 · 真实光影</p>
     <pre>[拖动旋转]  [按 S 昼夜]  [按 W 风力]</pre>
-    <button id="wind-pill" aria-label="切换风力">风力 · 二级</button>
   </main>
+
+  <details id="controls">
+    <summary>参数</summary>
+    <div class="panel">
+      <fieldset class="wind-group">
+        <legend>风力</legend>
+        <label><input type="radio" name="wind" value="0"><span>一级</span></label>
+        <label><input type="radio" name="wind" value="1" checked><span>二级</span></label>
+        <label><input type="radio" name="wind" value="2"><span>三级</span></label>
+      </fieldset>
+      <label class="daynight"><input type="checkbox" id="daynight-toggle"><span>夜晚</span></label>
+    </div>
+  </details>
 
   <script type="module" src="./main.js"></script>
 </body>

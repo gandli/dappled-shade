@@ -65,16 +65,13 @@ tree.receiveShadow = true;
 tree.position.y = 0;
 scene.add(tree);
 
-const WIND_LEVELS = [
-  { name: '一级', strength: 0.18 },
-  { name: '二级', strength: 0.5 },
-  { name: '三级', strength: 1.1 },
-];
+const WIND_STRENGTH = [0.18, 0.5, 1.1]; // 对应面板一级/二级/三级
 let windIdx = 1;
 
 function applyWind() {
-  const v = WIND_LEVELS[windIdx].strength;
+  const v = WIND_STRENGTH[windIdx];
   const mat = tree.leavesMesh?.material;
+  // shader 在首帧 onBeforeCompile 后才挂上，故每帧调用
   if (mat?.userData?.shader) {
     mat.userData.shader.uniforms.uWindStrength.value.set(v, 0, v);
   }
@@ -108,18 +105,25 @@ function lerpSky(a) {
   ground.material.color.copy(_c.copy(GROUND_NIGHT).lerp(GROUND_DAY, dayness));
 }
 
-const windPill = document.getElementById('wind-pill');
-function paintWind() {
-  windPill.textContent = `风力 · ${WIND_LEVELS[windIdx].name}`;
+// 风力：面板 radio 直驱 shader；W 键仍循环
+const windRadios = document.querySelectorAll('input[name="wind"]');
+function setWind(i) {
+  windIdx = i;
+  applyWind();
+  windRadios[windIdx].checked = true;
 }
+windRadios.forEach((r) => r.addEventListener('change', () => setWind(+r.value)));
+document.getElementById('daynight-toggle').addEventListener('change', (e) => {
+  if (e.target.checked !== dark) toggleDayNight();
+});
+
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (k === 's') {
     toggleDayNight();
+    document.getElementById('daynight-toggle').checked = dark;
   } else if (k === 'w') {
-    windIdx = (windIdx + 1) % WIND_LEVELS.length;
-    applyWind();
-    paintWind();
+    setWind((windIdx + 1) % WIND_STRENGTH.length);
   }
 });
 
@@ -129,15 +133,13 @@ window.addEventListener('resize', () => {
   renderer.setSize(app.clientWidth, app.clientHeight);
 });
 
-paintWind();
-applyWind();
-
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
   const t = clock.elapsedTime;
   tree.update(t);
+  applyWind();
   if (SKY.t < 1) {
     SKY.t = Math.min(1, SKY.t + dt / 1.2); // 1.2s 过渡，时间驱动
     lerpSky(SKY.t);

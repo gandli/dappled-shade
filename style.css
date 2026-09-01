@@ -62,21 +62,75 @@ main pre {
   opacity: 0.6;
 }
 
-#wind-pill {
-  margin-top: 14px;
-  pointer-events: auto;
-  font: inherit;
-  font-size: 0.8rem;
-  color: inherit;
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  padding: 6px 16px;
-  cursor: pointer;
-  opacity: 0.8;
-  backdrop-filter: blur(4px);
+/* ---------- 可折叠参数面板 ---------- */
+
+#controls {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 3;
+  width: 180px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1a1917;
+  font-size: 0.85rem;
 }
 
-#wind-pill:hover {
-  opacity: 1;
+body.dark #controls {
+  background: rgba(16, 22, 38, 0.6);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #eef3ff;
+}
+
+#controls summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  user-select: none;
+  list-style: none;
+}
+
+#controls summary::-webkit-details-marker {
+  display: none;
+}
+
+#controls summary::after {
+  content: "▸";
+  float: right;
+  transition: transform 0.2s;
+}
+
+#controls[open] summary::after {
+  transform: rotate(90deg);
+}
+
+.panel {
+  padding: 4px 14px 14px;
+}
+
+.wind-group {
+  border: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.wind-group legend {
+  padding: 0;
+  opacity: 0.65;
+  font-size: 0.78rem;
+}
+
+.panel label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.panel .daynight {
+  margin-right: 0;
 }
