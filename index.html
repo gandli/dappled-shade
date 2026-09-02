@@ -1,52 +1,42 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>树影婆娑 · 3D</title>
-  <link rel="stylesheet" href="./style.css">
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://esm.sh/three@0.180.0",
-        "three/addons/": "https://esm.sh/three@0.180.0/examples/jsm/",
-        "@dgreenheck/ez-tree": "https://esm.sh/@dgreenheck/ez-tree@1.1.0?deps=three@0.180.0"
-      }
-    }
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>树影婆娑 · 高斯泼溅</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://esm.sh/three@0.180.0/es2022/three.mjs",
+    "@sparkjsdev/spark": "https://esm.sh/@sparkjsdev/spark@2.1.0?deps=three@0.180.0"
+  }
+}
+</script>
 </head>
-
 <body>
-  <div id="app"></div>
-
-  <main>
-    <h1>树影婆娑</h1>
-    <p>风过叶动 · 光影摇曳</p>
-  </main>
-
-  <details id="controls" open>
-    <summary>参数</summary>
-    <div class="panel">
-      <div class="field">
-        <span class="label">风力</span>
-        <div class="segmented">
-          <label><input type="radio" name="wind" value="0"><span>微</span></label>
-          <label><input type="radio" name="wind" value="1"><span>小</span></label>
-          <label><input type="radio" name="wind" value="2" checked><span>中</span></label>
-          <label><input type="radio" name="wind" value="3"><span>大</span></label>
-          <label><input type="radio" name="wind" value="4"><span>疾</span></label>
-        </div>
-      </div>
-      <label class="field">
-        <span class="label">夜晚</span>
-        <input type="checkbox" id="daynight-toggle">
-        <span class="track"></span>
-      </label>
+<h1>树影婆娑</h1>
+<p class="subtitle">高斯泼溅 · 风过叶动 · 光影摇曳</p>
+<details id="controls" open>
+  <summary>参数</summary>
+  <div class="field">
+    <span class="field-label">风力</span>
+    <div class="segmented" id="wind-seg">
+      <label><input type="radio" name="wind" value="0"><span>微风</span></label>
+      <label><input type="radio" name="wind" value="1"><span>小</span></label>
+      <label><input type="radio" name="wind" value="2" checked><span>中</span></label>
+      <label><input type="radio" name="wind" value="3"><span>大</span></label>
+      <label><input type="radio" name="wind" value="4"><span>疾</span></label>
     </div>
-  </details>
-
-  <script type="module" src="./main.js"></script>
+  </div>
+  <div class="field field-row">
+    <span class="field-label">夜晚</span>
+    <label class="pill">
+      <input type="checkbox" id="daynight-toggle">
+      <span class="track"><span class="thumb"></span></span>
+    </label>
+  </div>
+</details>
+<script type="module" src="main.js"></script>
 </body>
-
 </html>
