@@ -7,9 +7,9 @@
 
 ## 效果
 
-- 🌳 **程序化 3D 树** — [ez-tree](https://github.com/dgreenheck/ez-tree) 生成（Oak Medium），数千片叶 + 分枝树干
+- 🌳 **程序化 3D 树** — 数千片叶 + 分枝树干，参数化生成
 - 🌗 **真实光影** — Three.js 平行光 2048 shadow map，地面投出叶状斑驳影
-- 💨 **风力三档** — 直写叶材质 `uWindStrength` uniform，叶片摇曳（W 键 / 面板）
+- 💨 **风力五档** — 微/小/中/大/疾，叶与影同步摇曳（W 键 / 面板）
 - 🌙 **昼夜切换** — 太阳位置/色温/强度全插值，夜晚低角度冷蓝月光拉长树影（S 键 / 面板）
 - 📱 **移动端适配** — 面板改底部横条，触控目标 ≥44px，默认收起
 
@@ -29,7 +29,7 @@ python3 -m http.server 8765
 |------|------|
 | GitHub Pages | https://gandli.github.io/dappled-shade/ |
 | Vercel | https://dappled-shade.vercel.app |
-| Cloudflare Pages | 部署中 |
+| Cloudflare Workers | https://dappled-shade.dappled-shade.workers.dev |
 
 ## 交互
 
@@ -42,7 +42,7 @@ python3 -m http.server 8765
 
 ## 技术栈
 
-- [ez-tree](https://github.com/dgreenheck/ez-tree) — 程序化树 + 内置叶风 shader
+- [ez-tree](https://github.com/dgreenheck/ez-tree) — 程序化树生成与叶风着色器
 - [Three.js](https://threejs.org) — WebGL 渲染、真实阴影、ACES 色调映射
 - 原生 `<details>` 折叠面板 · 无构建 · 无状态库
 
