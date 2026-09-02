@@ -1,35 +1,36 @@
 #!/usr/bin/env python3
-"""结构自检：3D 版关键接线是否对齐，防止改一处漏一处。"""
+"""结构自检：高斯泼溅版关键接线是否对齐。"""
 import pathlib
 
 root = pathlib.Path(__file__).parent
 html = (root / "index.html").read_text()
-css = (root / "style.css").read_text()
 js = (root / "main.js").read_text()
 
-# 1) importmap 三个入口齐全且版本一致
-assert '"three":' in html and '"three/addons/":' in html and '@dgreenheck/ez-tree' in html
-assert html.count("three@0.180.0") >= 2, "three 版本未对齐"
-assert "deps=three@0.180.0" in html, "ez-tree 未 pin three"
+# 1) importmap：Spark + three 入口，且 three 版本一致
+assert '"@sparkjsdev/spark"' in html, "Spark 未注入 importmap"
+assert 'three@0.180.0' in html, "three 版本未对齐"
+assert 'deps=three@0.180.0' in html, "Spark 未 pin three 防双实例"
 
-# 2) 阴影链路：renderer 开 shadowMap + sun.castShadow + 树投影 + 地面接收
-assert "shadowMap.enabled = true" in js
-assert "castShadow = true" in js and "receiveShadow = true" in js
-assert "shadow.camera" in js, "平行光阴影视锥未配置（默认视锥装不下树）"
+# 2) 树 splat：程序化生成 + SparkRenderer 接管
+assert "SparkRenderer" in js and "scene.add(spark)" in js
+assert "constructSplats" in js, "树未程序化生成（避免外部 26MB 资产）"
+assert "SplatMesh" in js
 
-# 3) 风动：tree.update(t) 每帧驱动 + uWindStrength 可调
-assert "tree.update(t)" in js
-assert "uWindStrength" in js, "风力档位未接 shader"
+# 3) 风动：modifier 在 initialized 后挂 + updateGenerator（时序修复）
+assert "await splatMesh.initialized" in js
+assert "splatMesh.worldModifier = createWindModifier()" in js
+assert "splatMesh.updateGenerator()" in js
+assert "dyno.dynoBlock" in js or "dynoBlock" in js, "wind 位移未用 dyno 计算图"
 
-# 4) 昼夜：dayness 方向修正存在（night 时 a 增大应趋向夜）
-assert "dayness" in js and "1 - a" in js
+# 4) 风力五档 + W/S 键
+assert "WIND_STRENGTH" in js and "[0," in js
+assert 'name="wind"' in html
+assert "key.toUpperCase()" in js and "'W'" in js and "'S'" in js
 
-# 5) #app 必须有显式高度，否则 canvas 0 高（历史 bug）
-assert "#app" in css and "inset: 0" in css
+# 5) 昼夜：背景/光强 lerp
+assert "dark ?" in js and "background.lerp" in js
 
-# 6) 风力五档 + 按键 + 阴影风动(depth material 注入 wind 位移)
-assert "customDepthMaterial" in js and "windDisplace" in js, "阴影深度材质未注入风动位移"
-assert "uWindStrength" in js and "windUniforms" in js, "风力 uniform 未共享给阴影材质"
-assert "'w'" in js and "'s'" in js
+# 6) tree.splat 不能进仓库（纯程序化生成，26MB 二进制）
+assert not (root / "tree.splat").exists(), "tree.splat 误入仓库"
 
-print("OK: 结构自检全部通过")
+print("OK: 高斯泼溅版结构自检全部通过")
