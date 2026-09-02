@@ -122,7 +122,7 @@ tree.leavesMesh.customDepthMaterial.onBeforeCompile = (shader) => {
   );
 };
 
-const WIND_STRENGTH = [0.0, 0.12, 0.3, 0.6, 1.1]; // 微风→疾风 5 档
+const WIND_STRENGTH = [0, 0.4, 1.0, 2.0, 3.0]; // 微风→疾风 5 档（位移=strength×uv.y×sin，放大才可见）
 let windIdx = 2;
 
 function applyWind() {
