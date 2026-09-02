@@ -233,3 +233,83 @@ body.dark .segmented input:checked+span {
   outline: 2px solid #4a90d9;
   outline-offset: 2px;
 }
+
+/* ---------- 移动端 ---------- */
+
+@media (max-width: 640px) {
+  main {
+    padding: calc(3vh + env(safe-area-inset-top)) 16px 0;
+  }
+
+  main h1 {
+    font-size: 1.5rem;
+  }
+
+  main p {
+    font-size: 0.78rem;
+    margin-top: 6px;
+  }
+
+  /* 面板改底部横条，避开标题 */
+  #controls {
+    top: auto;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: auto;
+  }
+
+  #controls summary {
+    padding: 12px 14px;
+  }
+
+  .panel {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+  }
+
+  .field {
+    flex: 1;
+    gap: 4px;
+  }
+
+  .field:has(#daynight-toggle) {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* 触控目标 ≥44px */
+  .segmented {
+    display: flex;
+  }
+
+  .segmented label {
+    flex: 1;
+  }
+
+  .segmented span {
+    padding: 14px 0;
+    font-size: 0.9rem;
+  }
+
+  .track {
+    width: 52px;
+    height: 32px;
+  }
+
+  .track::after {
+    width: 26px;
+    height: 26px;
+  }
+
+  .field:has(#daynight-toggle) .label {
+    padding: 4px 0;
+  }
+
+  #daynight-toggle:checked+.track::after {
+    transform: translateX(20px);
+  }
+}

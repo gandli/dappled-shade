@@ -105,6 +105,10 @@ function lerpSky(a) {
   ground.material.color.copy(_c.copy(GROUND_NIGHT).lerp(GROUND_DAY, dayness));
 }
 
+// 移动端：面板默认收起，避免盖住画面
+const panel = document.getElementById('controls');
+if (matchMedia('(max-width: 640px)').matches) panel.open = false;
+
 // 风力：面板 radio 直驱 shader；W 键仍循环
 const windRadios = document.querySelectorAll('input[name="wind"]');
 function setWind(i) {
