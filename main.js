@@ -71,7 +71,7 @@ scene.add(tree);
 const windUniforms = {
   uTime: { value: 0 },
   uWindStrength: { value: new THREE.Vector3(0.5, 0, 0.5) },
-  uWindFrequency: { value: 0.5 },
+  uWindFrequency: { value: 1.0 },
   uWindScale: { value: 70 },
 };
 const WIND_GLSL = `
@@ -122,14 +122,17 @@ tree.leavesMesh.customDepthMaterial.onBeforeCompile = (shader) => {
   );
 };
 
-const WIND_STRENGTH = [0, 0.4, 1.0, 2.0, 3.0]; // 微风→疾风 5 档（位移=strength×uv.y×sin，放大才可见）
+const WIND_STRENGTH = [0, 0.8, 2.0, 4.0, 6.0]; // 微风→疾风 5 档（位移=strength×uv.y×sin，放大才可见）
 let windIdx = 2;
 
 function applyWind() {
   const v = WIND_STRENGTH[windIdx];
   windUniforms.uWindStrength.value.set(v, 0, v);
   const sh = tree.leavesMesh?.material?.userData?.shader;
-  if (sh) sh.uniforms.uWindStrength.value.set(v, 0, v);
+  if (sh) {
+    sh.uniforms.uWindStrength.value.set(v, 0, v);
+    sh.uniforms.uWindFrequency.value = windUniforms.uWindFrequency.value; // 频率同步，阴影与树一致
+  }
 }
 
 // 昼夜：太阳位置/色温/强度全插值。夜=低角度冷蓝月光 → 长影婆娑
