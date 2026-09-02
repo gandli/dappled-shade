@@ -1,0 +1,9 @@
+name = "dappled-shade"
+compatibility_date = "2026-01-01"
+account_id = "f587e2e21495266d804e701c090ee36b"
+
+# 纯静态站：Workers 静态资产直发，无 worker 脚本
+assets = { directory = "." }
+
+# 绑 workers.dev 路由，绕过 subdomain 门
+workers_dev = true

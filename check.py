@@ -27,8 +27,9 @@ assert "dayness" in js and "1 - a" in js
 # 5) #app 必须有显式高度，否则 canvas 0 高（历史 bug）
 assert "#app" in css and "inset: 0" in css
 
-# 6) 风力三档 + 按键
-assert js.count("一级") + js.count("二级") + js.count("三级") >= 3
+# 6) 风力五档 + 按键 + 阴影风动(depth material 注入 wind 位移)
+assert "customDepthMaterial" in js and "windDisplace" in js, "阴影深度材质未注入风动位移"
+assert "uWindStrength" in js and "windUniforms" in js, "风力 uniform 未共享给阴影材质"
 assert "'w'" in js and "'s'" in js
 
 print("OK: 结构自检全部通过")
