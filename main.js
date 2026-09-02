@@ -49,72 +49,73 @@ function createWindModifier() {
   );
 }
 
-// ---- 程序化树生成：递归分叉 + 各向异性 splat ----
+// ---- 程序化树生成（Sierpinski 分形 + 叶团）----
 function generateTree(splats) {
+  const TRUNK_SPLATS = 120000;
+  const LEAF_SPLATS = 350000;
+
   const center = new THREE.Vector3();
   const scale = new THREE.Vector3();
   const quat = new THREE.Quaternion();
-  const euler = new THREE.Euler();
   const color = new THREE.Color();
-  const UP = new THREE.Vector3(0, 1, 0);
-  const _v = new THREE.Vector3();
-  const randVec = () => _v.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
 
-  // 叶簇：扁平叶盘 splat，内深外浅（伪 AO）
-  function leafCluster(pos, r) {
-    for (let i = 0; i < 7000; i++) {
+  // 树干/树枝（分形 L-system 近似）
+  const BRANCH_DIRS = [
+    [0, 1, 0],
+    [0.4, 0.85, 0.1],
+    [-0.35, 0.88, -0.15],
+    [0.15, 0.9, 0.3],
+    [-0.2, 0.87, 0.25],
+  ];
+  const BRANCH_COUNTS = [30000, 25000, 25000, 20000, 20000];
+  let splatIdx = 0;
+
+  BRANCH_DIRS.forEach((dir, di) => {
+    const [bx, by, bz] = dir;
+    const cnt = BRANCH_COUNTS[di];
+    const branchWidth = 0.05 + di * 0.02;
+    for (let i = 0; i < cnt; i++) {
+      const t = i / cnt;
+      // 沿分支走
+      center.set(
+        bx * t * 5.0 + (Math.random() - 0.5) * branchWidth * (1 + t * 2),
+        by * t * 6.0 - 1.5 + (Math.random() - 0.5) * branchWidth,
+        bz * t * 4.0 + (Math.random() - 0.5) * branchWidth * (1 + t),
+      );
+      scale.setScalar(0.02 + t * 0.015);
+      // 树皮色：暗棕 + 变化
+      color.setRGB(0.25 + Math.random() * 0.1, 0.15 + Math.random() * 0.05, 0.05 + Math.random() * 0.03);
+      splats.pushSplat(center, scale, quat, 1.0, color);
+    }
+  });
+
+  // 叶团（椭球分布，绿色调）
+  const LEAF_REGIONS = [
+    { cx: 0.5, cy: 7, cz: 0.5, rx: 3, ry: 2.5, rz: 3, color: [0.35, 0.55, 0.15] },
+    { cx: -1.5, cy: 6, cz: 1.5, rx: 2.5, ry: 2, rz: 2.5, color: [0.4, 0.6, 0.18] },
+    { cx: 1, cy: 5, cz: -1, rx: 2, ry: 1.8, rz: 2, color: [0.38, 0.58, 0.16] },
+    { cx: 0, cy: 8.5, cz: 0, rx: 2, ry: 1.5, rz: 2, color: [0.42, 0.62, 0.2] },
+    { cx: -0.5, cy: 9.5, cz: 0.5, rx: 1.5, ry: 1, rz: 1.5, color: [0.45, 0.65, 0.25] },
+  ];
+
+  LEAF_REGIONS.forEach((r) => {
+    const cnt = Math.round(LEAF_SPLATS / LEAF_REGIONS.length);
+    for (let i = 0; i < cnt; i++) {
+      // 球面均匀 → 椭球
       const u = Math.random() * 2 - 1;
       const v = Math.random() * Math.PI * 2;
-      const rr = r * (0.45 + 0.55 * Math.cbrt(Math.random())); // 中空壳状 → 簇间透空
+      const r2 = Math.cbrt(Math.random());
       center.set(
-        pos.x + rr * Math.sqrt(1 - u * u) * Math.cos(v),
-        pos.y + rr * u * 0.8,
-        pos.z + rr * Math.sqrt(1 - u * u) * Math.sin(v),
+        r.cx + r2 * Math.sqrt(1 - u * u) * Math.cos(v) * r.rx + (Math.random() - 0.5) * 0.3,
+        r.cy + r2 * u * r.ry + (Math.random() - 0.5) * 0.2,
+        r.cz + r2 * Math.sqrt(1 - u * u) * Math.sin(v) * r.rz + (Math.random() - 0.5) * 0.3,
       );
-      // 薄盘叶 splat，随机朝向
-      scale.set(0.09 + Math.random() * 0.07, 0.01, 0.06 + Math.random() * 0.05);
-      euler.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-      quat.setFromEuler(euler);
-      const d = center.distanceTo(pos) / r;
-      const bright = 0.55 + (1 - d) * 0.45 + Math.random() * 0.3;
-      color.setRGB(0.22 * bright + 0.04, 0.48 * bright + 0.06, 0.12 * bright);
-      splats.pushSplat(center, scale, quat, 1.0, color);
-    }
-  }
-
-  // 递归树枝：cigar splat 沿枝向连成连续管道，末梢长叶簇
-  function branch(pos, direction, len, radius, depth) {
-    const end = pos.clone().addScaledVector(direction, len);
-    const mid = pos.clone().lerp(end, 0.5).addScaledVector(randVec(), len * 0.18); // 随机弯曲
-    const steps = Math.max(4, Math.round(len * 14));
-    const a = new THREE.Vector3();
-    const b = new THREE.Vector3();
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      a.copy(pos).lerp(mid, t);
-      b.copy(mid).lerp(end, t);
-      center.copy(a).lerp(b, t);
-      const r = radius * (1 - t * 0.35);
-      scale.set(r, (len / steps) * 1.3, r); // 沿枝向拉长 → 连续管
-      quat.setFromUnitVectors(UP, direction);
+      scale.setScalar(0.03 + Math.random() * 0.04);
       const shade = 0.85 + Math.random() * 0.3;
-      color.setRGB(0.26 * shade, 0.17 * shade, 0.10 * shade);
+      color.setRGB(r.color[0] * shade, r.color[1] * shade, r.color[2] * shade);
       splats.pushSplat(center, scale, quat, 1.0, color);
     }
-    if (depth <= 0) {
-      leafCluster(end, 0.6 + Math.random() * (radius * 3.5));
-      return;
-    }
-    if (depth === 1 && Math.random() < 0.4) leafCluster(end, 0.5 + Math.random() * 0.8); // 冠内小簇破实心
-    const n = depth >= 2 ? 3 : 2;
-    for (let k = 0; k < n; k++) {
-      const nd = direction.clone().addScaledVector(randVec(), 0.35).addScaledVector(UP, 0.35).normalize();
-      branch(end, nd, len * 0.72, radius * 0.62, depth - 1);
-    }
-  }
-
-  // 主干：1→3→9→~25→~60 枝，末梢 ~60 叶簇
-  branch(new THREE.Vector3(0, -1.5, 0), new THREE.Vector3(0.03, 1, 0.02).normalize(), 3.4, 0.24, 3);
+  });
 }
 
 // ---- 场景 ----
