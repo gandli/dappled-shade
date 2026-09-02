@@ -23,6 +23,14 @@ python3 -m http.server 8765
 
 打开 `http://localhost:8765`。页面从 [esm.sh](https://esm.sh) 拉取 three 依赖（首次需要外网）。
 
+## 在线预览
+
+| 平台 | 地址 |
+|------|------|
+| GitHub Pages | https://gandli.github.io/dappled-shade/ |
+| Vercel | https://dappled-shade.vercel.app |
+| Cloudflare Pages | 部署中 |
+
 ## 交互
 
 | 操作 | 效果 |
